@@ -1,9 +1,8 @@
 import json
 import unittest
-from troposphere import awsencode, AWSObject, Output, Parameter
-from troposphere import Template, UpdatePolicy, Ref
+from troposphere import awsencode, AWSObject, AWSProperty, Output, Parameter
+from troposphere import Template, Ref
 from troposphere.ec2 import Instance, SecurityGroupRule
-from troposphere.autoscaling import AutoScalingGroup
 from troposphere.elasticloadbalancing import HealthCheck
 from troposphere.validators import positive_integer
 
@@ -60,13 +59,17 @@ class FakeAWSObject(AWSObject):
 
     def validate(self):
         properties = self.properties
-        name = self.name
+        title = self.title
         type = self.type
         if 'callcorrect' in properties and 'singlelist' in properties:
             raise ValueError(
                 ("Cannot specify both 'callcorrect and 'singlelist' in "
-                 "object %s (type %s)" % (name, type))
+                 "object %s (type %s)" % (title, type))
             )
+
+
+class FakeAWSProperty(AWSProperty):
+    props = {}
 
 
 class TestValidators(unittest.TestCase):
@@ -133,68 +136,6 @@ class TestHealthCheck(unittest.TestCase):
             )
 
 
-class TestUpdatePolicy(unittest.TestCase):
-
-    def test_pausetime(self):
-        with self.assertRaises(ValueError):
-            UpdatePolicy('AutoScalingRollingUpdate', PauseTime='90')
-
-    def test_type(self):
-        with self.assertRaises(ValueError):
-            UpdatePolicy('MyCoolPolicy')
-
-    def test_works(self):
-        policy = UpdatePolicy(
-            'AutoScalingRollingUpdate',
-            PauseTime='PT1M5S',
-            MinInstancesInService='2',
-            MaxBatchSize='1',
-        )
-        self.assertEqual(policy.PauseTime, 'PT1M5S')
-
-    def test_mininstances(self):
-        group = AutoScalingGroup(
-            'mygroup',
-            LaunchConfigurationName="I'm a test",
-            MaxSize="1",
-            MinSize="1",
-            UpdatePolicy=UpdatePolicy(
-                'AutoScalingRollingUpdate',
-                PauseTime='PT1M5S',
-                MinInstancesInService='1',
-                MaxBatchSize='1',
-            )
-        )
-        with self.assertRaises(ValueError):
-            self.assertTrue(group.validate())
-
-    def test_working(self):
-        group = AutoScalingGroup(
-            'mygroup',
-            LaunchConfigurationName="I'm a test",
-            MaxSize="4",
-            MinSize="2",
-            UpdatePolicy=UpdatePolicy(
-                'AutoScalingRollingUpdate',
-                PauseTime='PT1M5S',
-                MinInstancesInService='2',
-                MaxBatchSize='1',
-            )
-        )
-        self.assertTrue(group.validate())
-
-    def test_updatepolicy_noproperty(self):
-        t = UpdatePolicy('AutoScalingRollingUpdate', PauseTime='PT1M0S')
-        d = json.loads(json.dumps(t, cls=awsencode))
-        with self.assertRaises(KeyError):
-            d['Properties']
-
-    def test_updatepolicy_dictname(self):
-        t = UpdatePolicy('AutoScalingRollingUpdate', PauseTime='PT1M0S')
-        d = json.loads(json.dumps(t, cls=awsencode))
-        self.assertIn('AutoScalingRollingUpdate', d)
-
-
 class TestOutput(unittest.TestCase):
 
     def test_noproperty(self):
@@ -202,6 +143,11 @@ class TestOutput(unittest.TestCase):
         d = json.loads(json.dumps(t, cls=awsencode))
         with self.assertRaises(KeyError):
             d['Properties']
+
+    def test_empty_awsproperty_outputs_empty_object(self):
+        t = FakeAWSProperty()
+        d = json.loads(json.dumps(t, cls=awsencode))
+        self.assertEquals(len(d), 0)
 
 
 class TestParameter(unittest.TestCase):
@@ -225,6 +171,13 @@ class TestProperty(unittest.TestCase):
         d = json.loads(json.dumps(t, cls=awsencode))
         with self.assertRaises(KeyError):
             d['Properties']
+
+    def test_awsproperty_invalid_property(self):
+        t = FakeAWSProperty()
+        with self.assertRaises(AttributeError) as context:
+            t.badproperty = 5
+        self.assertTrue('FakeAWSProperty' in context.exception.args[0])
+        self.assertTrue('badproperty' in context.exception.args[0])
 
 
 class TestDuplicate(unittest.TestCase):
@@ -258,6 +211,15 @@ class TestRef(unittest.TestCase):
         t = Ref(param)
         ref = json.loads(json.dumps(t, cls=awsencode))
         self.assertEqual(ref['Ref'], 'param')
+
+
+class TestName(unittest.TestCase):
+
+    def test_ref(self):
+        name = 'fake'
+        t = Template()
+        resource = t.add_resource(Instance(name))
+        self.assertEqual(resource.name, name)
 
 
 if __name__ == '__main__':

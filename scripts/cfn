@@ -12,9 +12,10 @@ except ImportError:
     print("boto 2.8.0+ is required")
     sys.exit(1)
 
-
-def upload_template_to_s3(conn, bucket_name, key_name, template):
-    cloudformation_bucket = conn.create_bucket(bucket_name,)
+def upload_template_to_s3(conn, region, bucket_name, key_name, template):
+    cloudformation_bucket = conn.lookup(bucket_name)
+    if not cloudformation_bucket:
+        cloudformation_bucket = conn.create_bucket(bucket_name, location=region)
     key = cloudformation_bucket.new_key(key_name)
     key.set_contents_from_string(template)
     cfn_template_url = "https://s3.amazonaws.com/%s/%s" % (
@@ -48,7 +49,13 @@ def build_s3_name(stack_name):
 
 
 def describe_resources(conn, stackname):
-    print(conn.describe_stack_resources(stackname))
+    if stackname is not None:
+        print(conn.describe_stack_resources(stackname))
+    else:
+        stacks = conn.describe_stacks()
+        for stack in stacks:
+            print("Resources for stack {0}:".format(stack.stack_name))
+            print(conn.describe_stack_resources(stack.stack_name))
 
 
 def get_events(conn, stackname):
@@ -79,7 +86,6 @@ def tail(conn, stack_name):
         seen.add(e.event_id)
 
     # Now keep looping through and dump the new events
-    next = None
     while 1:
         events = get_events(conn, stack_name)
         for e in events:
@@ -91,23 +97,23 @@ def tail(conn, stack_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--create", help="Create stack using template",
-                        dest="create", )
-    parser.add_argument("-b", "--bucket", help="Upload template to S3 bucket",
-                        dest="s3bucket", required=False)
-    parser.add_argument("-d", "--debug", help="Turn on boto debug logging",
-                        dest="debug", required=False, action='store_true')
-    parser.add_argument("-n", "--name", help="Template name in S3 bucket",
-                        dest="s3name", required=False)
+    parser.add_argument("-c", "--create", help="Create stack using template")
+    parser.add_argument("-b", "--bucket", dest="s3bucket",
+                        help="Upload template to S3 bucket")
+    parser.add_argument("-d", "--debug", action='store_true',
+                        help="Turn on boto debug logging")
+    parser.add_argument("-n", "--name", dest="s3name",
+                        help="Template name in S3 bucket")
     parser.add_argument("-p", "--parameter", dest="params", action='append',
-                        help="stack parameters in key=value form",)
-    parser.add_argument("-r", "--region", help="Region (default us-east-1)",
-                        dest="region", default="us-east-1")
-    parser.add_argument("-R", "--resources", help="describe stack resources",
-                        dest="resources", required=False, action='store_true')
-    parser.add_argument("-t", "--tail", help="tail event log",
-                        dest="tail", required=False, action='store_true')
-    parser.add_argument("stack")
+                        help="stack parameters in key=value form")
+    parser.add_argument("-r", "--region", default="us-east-1",
+                        help="Region (default %(default)s)")
+    parser.add_argument("-R", "--resources", action='store_true',
+                        help="describe stack resources, list resources for "
+                             "all stacks if no stack is specified")
+    parser.add_argument("-t", "--tail", action='store_true',
+                        help="tail event log")
+    parser.add_argument("stack", nargs='?')
     values = parser.parse_args()
 
     if values.params:
@@ -133,7 +139,7 @@ if __name__ == "__main__":
             # Upload to S3 and create the stack
             s3conn = boto.s3.connect_to_region(values.region)
             url = upload_template_to_s3(
-                s3conn, values.s3bucket, values.s3name, template)
+                s3conn, values.region, values.s3bucket, values.s3name, template)
             create_stack(conn, values.stack, None, url, values.params)
         else:
             # Upload file as part of the stack creation

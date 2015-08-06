@@ -10,28 +10,37 @@ import types
 
 from . import validators
 
-__version__ = "0.3.4"
+__version__ = "1.1.2"
 
 # constants for DeletionPolicy
 Delete = 'Delete'
 Retain = 'Retain'
 Snapshot = 'Snapshot'
 
+# Pseudo Parameters
+AWS_ACCOUNT_ID = 'AWS::AccountId'
+AWS_NOTIFICATION_ARNS = 'AWS::NotificationARNs'
+AWS_NO_VALUE = 'AWS::NoValue'
+AWS_REGION = 'AWS::Region'
+AWS_STACK_ID = 'AWS::StackId'
+AWS_STACK_NAME = 'AWS::StackName'
+
 valid_names = re.compile(r'^[a-zA-Z0-9]+$')
 
 
 class BaseAWSObject(object):
-    def __init__(self, name, template=None, **kwargs):
-        self.name = name
+    def __init__(self, title, template=None, **kwargs):
+        self.title = title
         self.template = template
         # Cache the keys for validity checks
         self.propnames = self.props.keys()
         self.attributes = ['DependsOn', 'DeletionPolicy',
-                           'Metadata', 'UpdatePolicy']
+                           'Metadata', 'UpdatePolicy',
+                           'Condition', 'CreationPolicy']
 
         # unset/None is also legal
-        if name and not valid_names.match(name):
-            raise ValueError('Name not alphanumeric')
+        if title and not valid_names.match(title):
+            raise ValueError('Name "%s" not alphanumeric' % title)
 
         # Create the list of properties set on this object by the user
         self.properties = {}
@@ -42,9 +51,18 @@ class BaseAWSObject(object):
             }
         else:
             self.resource = self.properties
-        if hasattr(self, 'type') and self.type is not None:
-            self.resource['Type'] = self.type
+        if hasattr(self, 'resource_type') and self.resource_type is not None:
+            self.resource['Type'] = self.resource_type
         self.__initialized = True
+
+        # Check for properties defined in the class
+        for k, (_, required) in self.props.items():
+            v = getattr(type(self), k, None)
+            if v is not None and k not in kwargs:
+                if k in self.attributes:
+                    self.resource[k] = v
+                else:
+                    self.__setattr__(k, v)
 
         # Now that it is initialized, populate it with the kwargs
         for k, v in kwargs.items():
@@ -62,6 +80,11 @@ class BaseAWSObject(object):
         try:
             return self.properties.__getitem__(name)
         except KeyError:
+            # Fall back to the name attribute in the object rather than
+            # in the properties dict. This is for non-OpenStack backwards
+            # compatibility since OpenStack objects use a "name" property.
+            if name == 'name':
+                return self.__getattribute__('title')
             raise AttributeError(name)
 
     def __setattr__(self, name, value):
@@ -91,9 +114,11 @@ class BaseAWSObject(object):
                     self._raise_type(name, value, expected_type)
 
                 # Iterate over the list and make sure it matches our
-                # type checks
+                # type checks (as above accept AWSHelperFn because
+                # we can't do the validation ourselves)
                 for v in value:
-                    if not isinstance(v, tuple(expected_type)):
+                    if not isinstance(v, tuple(expected_type)) \
+                       and not isinstance(v, AWSHelperFn):
                         self._raise_type(name, v, expected_type)
                 # Validated so assign it
                 return self.properties.__setitem__(name, value)
@@ -105,8 +130,16 @@ class BaseAWSObject(object):
             else:
                 self._raise_type(name, value, expected_type)
 
+        type_name = getattr(self, 'resource_type', self.__class__.__name__)
+
+        if type_name == 'AWS::CloudFormation::CustomResource' or \
+                type_name.startswith('Custom::'):
+            # Add custom resource arguments to the dict without any further
+            # validation. The properties of a CustomResource is not known.
+            return self.properties.__setitem__(name, value)
+
         raise AttributeError("%s object does not support attribute %s" %
-                            (self.type, name))
+                             (type_name, name))
 
     def _raise_type(self, name, value, expected_type):
         raise TypeError('%s is %s, expected %s' %
@@ -116,17 +149,20 @@ class BaseAWSObject(object):
         pass
 
     def JSONrepr(self):
-        for k, (prop_type, required) in self.props.items():
+        for k, (_, required) in self.props.items():
             if required and k not in self.properties:
-                type = getattr(self, 'type', "<unknown type>")
-                raise ValueError("Resource %s required in type %s" % (k, type))
+                rtype = getattr(self, 'resource_type', "<unknown type>")
+                raise ValueError(
+                    "Resource %s required in type %s" % (k, rtype))
         self.validate()
         # If no other properties are set, only return the Type.
         # Mainly used to not have an empty "Properties".
         if self.properties:
             return self.resource
+        elif hasattr(self, 'resource_type'):
+            return {'Type': self.resource_type}
         else:
-            return {'Type': self.type}
+            return {}
 
 
 class AWSObject(BaseAWSObject):
@@ -140,8 +176,8 @@ class AWSDeclaration(BaseAWSObject):
     aws-product-property-reference.html
     """
 
-    def __init__(self, name, **kwargs):
-        super(AWSDeclaration, self).__init__(name, **kwargs)
+    def __init__(self, title, **kwargs):
+        super(AWSDeclaration, self).__init__(title, **kwargs)
 
 
 class AWSProperty(BaseAWSObject):
@@ -152,8 +188,21 @@ class AWSProperty(BaseAWSObject):
     """
     dictname = None
 
-    def __init__(self, name=None, **kwargs):
-        super(AWSProperty, self).__init__(name, **kwargs)
+    def __init__(self, title=None, **kwargs):
+        super(AWSProperty, self).__init__(title, **kwargs)
+
+
+class AWSAttribute(BaseAWSObject):
+    dictname = None
+
+    """
+    Used for CloudFormation Resource Attribute objects
+    http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/
+    aws-product-attribute-reference.html
+    """
+
+    def __init__(self, title=None, **kwargs):
+        super(AWSAttribute, self).__init__(title, **kwargs)
 
 
 def validate_pausetime(pausetime):
@@ -163,28 +212,17 @@ def validate_pausetime(pausetime):
 
 
 class UpdatePolicy(BaseAWSObject):
-    props = {
-        'MaxBatchSize': (basestring, False),
-        'MinInstancesInService': (basestring, False),
-        'PauseTime': (validate_pausetime, False),
-    }
-
-    valid_update_policies = (
-        'AutoScalingRollingUpdate',
-    )
-
-    def __init__(self, name, **kwargs):
-        if name not in self.valid_update_policies:
-            raise ValueError('UpdatePolicy name must be one of %r' % (
-                self.valid_update_policies,))
-        self.dictname = name
-        super(UpdatePolicy, self).__init__(None, **kwargs)
+    def __init__(self, title, **kwargs):
+        raise DeprecationWarning(
+            "This UpdatePolicy class is deprecated, please switch to using "
+            "the more general UpdatePolicy in troposphere.policies.\n"
+        )
 
 
 class AWSHelperFn(object):
     def getdata(self, data):
         if isinstance(data, BaseAWSObject):
-            return data.name
+            return data.title
         else:
             return data
 
@@ -198,8 +236,8 @@ class Base64(AWSHelperFn):
 
 
 class FindInMap(AWSHelperFn):
-    def __init__(self, map, key, value):
-        self.data = {'Fn::FindInMap': [self.getdata(map), key, value]}
+    def __init__(self, mapname, key, value):
+        self.data = {'Fn::FindInMap': [self.getdata(mapname), key, value]}
 
     def JSONrepr(self):
         return self.data
@@ -214,7 +252,7 @@ class GetAtt(AWSHelperFn):
 
 
 class GetAZs(AWSHelperFn):
-    def __init__(self, region):
+    def __init__(self, region=""):
         self.data = {'Fn::GetAZs': region}
 
     def JSONrepr(self):
@@ -224,6 +262,38 @@ class GetAZs(AWSHelperFn):
 class If(AWSHelperFn):
     def __init__(self, cond, true, false):
         self.data = {'Fn::If': [self.getdata(cond), true, false]}
+
+    def JSONrepr(self):
+        return self.data
+
+
+class Equals(AWSHelperFn):
+    def __init__(self, value_one, value_two):
+        self.data = {'Fn::Equals': [value_one, value_two]}
+
+    def JSONrepr(self):
+        return self.data
+
+
+class And(AWSHelperFn):
+    def __init__(self, cond_one, cond_two, *conds):
+        self.data = {'Fn::And': [cond_one, cond_two] + list(conds)}
+
+    def JSONrepr(self):
+        return self.data
+
+
+class Or(AWSHelperFn):
+    def __init__(self, cond_one, cond_two, *conds):
+        self.data = {'Fn::Or': [cond_one, cond_two] + list(conds)}
+
+    def JSONrepr(self):
+        return self.data
+
+
+class Not(AWSHelperFn):
+    def __init__(self, cond):
+        self.data = {'Fn::Not': [self.getdata(cond)]}
 
     def JSONrepr(self):
         return self.data
@@ -261,6 +331,14 @@ class Ref(AWSHelperFn):
         return self.data
 
 
+class Condition(AWSHelperFn):
+    def __init__(self, data):
+        self.data = {'Condition': self.getdata(data)}
+
+    def JSONrepr(self):
+        return self.data
+
+
 class awsencode(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'JSONrepr'):
@@ -293,6 +371,7 @@ class Template(object):
 
     def __init__(self):
         self.description = None
+        self.metadata = {}
         self.conditions = {}
         self.mappings = {}
         self.outputs = {}
@@ -303,6 +382,9 @@ class Template(object):
     def add_description(self, description):
         self.description = description
 
+    def add_metadata(self, metadata):
+        self.metadata = metadata
+
     def add_condition(self, name, condition):
         self.conditions[name] = condition
 
@@ -312,13 +394,13 @@ class Template(object):
     def _update(self, d, values):
         if isinstance(values, list):
             for v in values:
-                if v.name in d:
-                    self.handle_duplicate_key(values.name)
-                d[v.name] = v
+                if v.title in d:
+                    self.handle_duplicate_key(v.title)
+                d[v.title] = v
         else:
-            if values.name in d:
-                self.handle_duplicate_key(values.name)
-            d[values.name] = values
+            if values.title in d:
+                self.handle_duplicate_key(values.title)
+            d[values.title] = values
         return values
 
     def add_output(self, output):
@@ -339,10 +421,12 @@ class Template(object):
         else:
             self.version = "2010-09-09"
 
-    def to_json(self, indent=4, sort_keys=True, separators=(', ', ': ')):
+    def to_json(self, indent=4, sort_keys=True, separators=(',', ': ')):
         t = {}
         if self.description:
             t['Description'] = self.description
+        if self.metadata:
+            t['Metadata'] = self.metadata
         if self.conditions:
             t['Conditions'] = self.conditions
         if self.mappings:

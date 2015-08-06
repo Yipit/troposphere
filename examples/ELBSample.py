@@ -9,12 +9,23 @@ import troposphere.elasticloadbalancing as elb
 
 def AddAMI(template):
     template.add_mapping("RegionMap", {
-        "us-west-1": {"AMI": "ami-3bcc9e7e"},
+        "us-east-1": {"AMI": "ami-6411e20d"},
+        "us-west-1": {"AMI": "ami-c9c7978c"},
+        "us-west-2": {"AMI": "ami-fcff72cc"},
+        "eu-west-1": {"AMI": "ami-37c2f643"},
+        "ap-southeast-1": {"AMI": "ami-66f28c34"},
+        "ap-northeast-1": {"AMI": "ami-9c03a89d"},
+        "sa-east-1": {"AMI": "ami-a039e6bd"}
     })
 
 
 def main():
     template = Template()
+    template.add_version("2010-09-09")
+
+    template.add_description(
+        "AWS CloudFormation Sample Template: ELB with 2 EC2 instances")
+
     AddAMI(template)
 
     # Add the Parameters
@@ -83,7 +94,18 @@ def main():
 
     elasticLB = template.add_resource(elb.LoadBalancer(
         'ElasticLoadBalancer',
+        AccessLoggingPolicy=elb.AccessLoggingPolicy(
+            EmitInterval=5,
+            Enabled=True,
+            S3BucketName="logging",
+            S3BucketPrefix="myELB",
+        ),
         AvailabilityZones=GetAZs(""),
+        ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
+            Enabled=True,
+            Timeout=300,
+        ),
+        CrossZone=True,
         Instances=[Ref(r) for r in web_instances],
         Listeners=[
             elb.Listener(

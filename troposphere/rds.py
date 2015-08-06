@@ -3,18 +3,20 @@
 #
 # See LICENSE file for full license.
 
-from . import AWSHelperFn, AWSObject, AWSProperty
-from .validators import boolean
+from . import AWSHelperFn, AWSObject, AWSProperty, Ref
+from .validators import boolean, network_port, integer, positive_integer
 
 
 class DBInstance(AWSObject):
-    type = "AWS::RDS::DBInstance"
+    resource_type = "AWS::RDS::DBInstance"
 
     props = {
-        'AllocatedStorage': (basestring, True),
+        'AllocatedStorage': (positive_integer, True),
+        'AllowMajorVersionUpgrade': (boolean, False),
         'AutoMinorVersionUpgrade': (boolean, False),
         'AvailabilityZone': (basestring, False),
-        'BackupRetentionPeriod': (basestring, False),
+        'BackupRetentionPeriod': (positive_integer, False),
+        'CharacterSetName': (basestring, False),
         'DBInstanceClass': (basestring, True),
         'DBInstanceIdentifier': (basestring, False),
         'DBName': (basestring, False),
@@ -24,22 +26,65 @@ class DBInstance(AWSObject):
         'DBSubnetGroupName': (basestring, False),
         'Engine': (basestring, True),
         'EngineVersion': (basestring, False),
-        'Iops': (int, False),
+        'Iops': (integer, False),
+        'KmsKeyId': (basestring, False),
         'LicenseModel': (basestring, False),
-        'MasterUsername': (basestring, True),
-        'MasterUserPassword': (basestring, True),
+        'MasterUsername': (basestring, False),
+        'MasterUserPassword': (basestring, False),
         'MultiAZ': (boolean, False),
-        'Port': (basestring, False),
+        'OptionGroupName': (basestring, False),
+        'Port': (network_port, False),
         'PreferredBackupWindow': (basestring, False),
         'PreferredMaintenanceWindow': (basestring, False),
+        'PubliclyAccessible': (boolean, False),
         'SourceDBInstanceIdentifier': (basestring, False),
+        'StorageEncrypted': (boolean, False),
+        'StorageType': (basestring, False),
         'Tags': (list, False),
         'VPCSecurityGroups': ([basestring, AWSHelperFn], False),
     }
 
+    def validate(self):
+        if 'SourceDBInstanceIdentifier' in self.properties:
+
+            invalid_replica_properties = (
+                'BackupRetentionPeriod', 'DBName', 'MasterUsername',
+                'MasterUserPassword', 'PreferredBackupWindow', 'MultiAZ',
+                'DBSnapshotIdentifier', 'DBSubnetGroupName',
+            )
+
+            invalid_properties = [s for s in self.properties.keys() if
+                                  s in invalid_replica_properties]
+
+            if invalid_properties:
+                raise ValueError(
+                    ('{0} properties can\'t be provided when '
+                     'SourceDBInstanceIdentifier is present '
+                     'AWS::RDS::DBInstance.'
+                     ).format(', '.join(sorted(invalid_properties))))
+
+        if ('DBSnapshotIdentifier' not in self.properties and
+            'SourceDBInstanceIdentifier' not in self.properties) and \
+            ('MasterUsername' not in self.properties or
+             'MasterUserPassword' not in self.properties):
+            raise ValueError(
+                'Either (MasterUsername and MasterUserPassword) or'
+                ' DBSnapshotIdentifier are required in type '
+                'AWS::RDS::DBInstance.'
+            )
+
+        if 'KmsKeyId' in self.properties and \
+           'StorageEncrypted' not in self.properties:
+            raise ValueError(
+                'If KmsKeyId is provided, StorageEncrypted is required '
+                'AWS::RDS::DBInstance.'
+            )
+
+        return True
+
 
 class DBParameterGroup(AWSObject):
-    type = "AWS::RDS::DBParameterGroup"
+    resource_type = "AWS::RDS::DBParameterGroup"
 
     props = {
         'Description': (basestring, False),
@@ -50,7 +95,7 @@ class DBParameterGroup(AWSObject):
 
 
 class DBSubnetGroup(AWSObject):
-    type = "AWS::RDS::DBSubnetGroup"
+    resource_type = "AWS::RDS::DBSubnetGroup"
 
     props = {
         'DBSubnetGroupDescription': (basestring, True),
@@ -69,7 +114,7 @@ class RDSSecurityGroup(AWSProperty):
 
 
 class DBSecurityGroup(AWSObject):
-    type = "AWS::RDS::DBSecurityGroup"
+    resource_type = "AWS::RDS::DBSecurityGroup"
 
     props = {
         'EC2VpcId': (basestring, False),
@@ -80,12 +125,53 @@ class DBSecurityGroup(AWSObject):
 
 
 class DBSecurityGroupIngress(AWSObject):
-    type = "AWS::RDS::DBSecurityGroupIngress"
+    resource_type = "AWS::RDS::DBSecurityGroupIngress"
 
     props = {
         'CIDRIP': (basestring, False),
         'DBSecurityGroupName': (basestring, True),
-        'EC2SecurityGroupId': (basestring, True),
-        'EC2SecurityGroupName': (basestring, True),
-        'EC2SecurityGroupOwnerId': (basestring, True),
+        'EC2SecurityGroupId': (basestring, False),
+        'EC2SecurityGroupName': (basestring, False),
+        'EC2SecurityGroupOwnerId': (basestring, False),
+    }
+
+
+class EventSubscription(AWSObject):
+    resource_type = "AWS::RDS::EventSubscription"
+
+    props = {
+        'Enabled': (boolean, False),
+        'EventCategories': ([basestring], False),
+        'SnsTopicArn': (basestring, True),
+        'SourceIds': ([basestring, Ref], False),
+        'SourceType': (basestring, False),
+    }
+
+
+class OptionSetting(AWSProperty):
+    props = {
+        'Name': (basestring, False),
+        'Value': (basestring, False),
+    }
+
+
+class OptionConfiguration(AWSProperty):
+    props = {
+        'DBSecurityGroupMemberships': ([basestring, Ref], False),
+        'OptionName': (basestring, True),
+        'OptionSettings': ([OptionSetting], False),
+        'Port': (network_port, False),
+        'VpcSecurityGroupMemberships': ([basestring, Ref], False),
+    }
+
+
+class OptionGroup(AWSObject):
+    resource_type = "AWS::RDS::OptionGroup"
+
+    props = {
+        'EngineName': (basestring, True),
+        'MajorEngineVersion': (basestring, True),
+        'OptionGroupDescription': (basestring, True),
+        'OptionConfigurations': ([OptionConfiguration], True),
+        'Tags': (list, False),
     }

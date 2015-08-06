@@ -4,7 +4,8 @@
 # See LICENSE file for full license.
 
 from . import AWSObject, AWSProperty
-from .validators import boolean, integer_range, positive_integer, network_port
+from .validators import (
+    boolean, integer_range, positive_integer, network_port, integer)
 
 
 class AppCookieStickinessPolicy(AWSProperty):
@@ -52,12 +53,37 @@ class Policy(AWSProperty):
     }
 
 
+class ConnectionDrainingPolicy(AWSProperty):
+    props = {
+        'Enabled': (bool, True),
+        'Timeout': (integer, False)
+    }
+
+
+class ConnectionSettings(AWSProperty):
+    props = {
+        'IdleTimeout': (integer, True),
+    }
+
+
+class AccessLoggingPolicy(AWSProperty):
+    props = {
+        'EmitInterval': (integer, False),
+        'Enabled': (bool, True),
+        'S3BucketName': (basestring, False),
+        'S3BucketPrefix': (basestring, False),
+    }
+
+
 class LoadBalancer(AWSObject):
-    type = "AWS::ElasticLoadBalancing::LoadBalancer"
+    resource_type = "AWS::ElasticLoadBalancing::LoadBalancer"
 
     props = {
+        'AccessLoggingPolicy': (AccessLoggingPolicy, False),
         'AppCookieStickinessPolicy': (list, False),
         'AvailabilityZones': (list, False),
+        'ConnectionDrainingPolicy': (ConnectionDrainingPolicy, False),
+        'ConnectionSettings': (ConnectionSettings, False),
         'CrossZone': (boolean, False),
         'HealthCheck': (HealthCheck, False),
         'Instances': (list, False),
@@ -68,4 +94,5 @@ class LoadBalancer(AWSObject):
         'Scheme': (basestring, False),
         'SecurityGroups': (list, False),
         'Subnets': (list, False),
+        'Tags': (list, False),
     }

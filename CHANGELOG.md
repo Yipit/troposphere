@@ -1,4 +1,147 @@
-## 0.4.0 (unreleased)
+## 1.1.2 (2015-07-23)
+- Clarify the license is a [BSD 2-Clause license](http://opensource.org/licenses/BSD-2-Clause)
+- Add FindInMap type check for AutoScalingGroup validation of group sizes [GH-285]
+- Implement the template Metadata section [GH-286]
+
+## 1.1.1 (2015-07-12)
+- Rename lambda->awslambda [GH-268]
+- Add t2 large instance type [GH-269]
+- IAM: status required and managedpolicyarns [GH-272]
+- Fix wrong prop name in rds.OptionGroup OptionGroupConfigurations->OptionConfigurations [GH-274]
+- Add CloudFormation CustomResource [GH-278]
+- Add rds snapshot on delete example [GH-280]
+- Unable to pass Cluster name as String [GH-281]
+- Fix unable to set StringValue on ObjectField in DataPipeline [GH-283]
+
+## 1.1.0 (2015-06-15)
+- added AWS::CloudFormation::Stack NotificationARNs property [GH-243]
+- Add additional import for PrivateIpAddressSpecification [GH-247]
+- Add true s3 bucket name validator [GH-249]
+- Replace strict `int` comparison by flexible `troposphere.validators.integer` [GH-251]
+- Add validation for AZMode property on CacheCluster objects [GH-252]
+- Fixing Opsworks Naming (ThresholdWaitTime -> ThresholdsWaitTime) [GH-253]
+- Adding AutoScalingType to OpsWorks Instance [GH-255]
+- Allow extending classes + tests [GH-257]
+- Release June 11, 2015 [GH-259]
+- Add M4 instances and Memcached port [GH-260]
+- Add property for Subnet: MapPublicIpOnLaunch [GH-261]
+- Minor improvements and fixes [GH-262]
+- Update LoginProfile. Note: this is a breaking change and requires adding a
+  ```Password=``` keyword parameter into LoginProfile. [GH-264]
+- Add 2 additional properties (elasticache:CacheCluster:SnapshotName and opsworks:Layer:LifecycleEventConfiguration) [GH-265]
+
+## 1.0.0 (2015-05-11)
+- Fix two elasticache properties [GH-196]
+- Add interim MinimumProtocolVersion to CloudFront ViewerCertificate [GH-218]
+- Missing OriginPath in cloudfront.py [GH-220]
+- Fix DBInstance constraints in order to allow the creation of RDS read-only replicas  [GH-221]
+- Add properties CharacterSetName, KmsKeyId, and StorageEncrypted to AWS::RDS::DBInstance [GH-224]
+- Add Route53 HostedZoneVPCs, HostedZoneTags, HealthCheckTags
+- Add new properties from 2015-04-16 CloudFormation release [GH-225, GH-240]
+- Allow default region for GetAZs() [GH-232]
+- Make AvailabilityZones parameter optional in AutoScalingGroup
+- EventSubscription resource + EC2 types [GH-227]
+- Python 3.4 support [GH-228]
+- examples fix: users is list [GH-237]
+- SNS Topic fields are not required [GH-230]
+- Make AvailabilityZones parameter optional in AutoScalingGroup [GH-236]
+
+## 0.7.2 (2015-03-23)
+- Support AWS helper functions in lists during validation [GH-179]
+- Update README [GH-183]
+- Fixing RedshiftClusterInVpc example; incorrect SG setup [GH-186]
+- Add optional NonKeyAttributes to DynamoDB Projection class [GH-188]
+- Change AutoScaling ScheduledAction StartTime, EndTime, and Recurrence to optional [GH-189]
+- CloudFront forwarded values required on cache behavior [GH-191]
+- DynamoDB attribute definitions required [GH-192]
+- Add some ec2 required fields [GH-193]
+- Fix ElasticBeanstalk resources [GH-213]
+- Fix iam Policy Resource/Property bug [GH-214]
+
+## 0.7.1 (2015-01-11)
+- Fix UpdatePolicy validation [GH-173]
+- Add AWS::CloudFormation::Init ConfigSets support [GH-176]
+- Change CloudWatch Alarm's Threshold prop to be basestring [GH-178]
+
+## 0.7.0 (2015-01-02)
+- Added new Google Group for discussion:
+  https://groups.google.com/forum/#!forum/cloudtools-dev
+- Fixing ValueError message to refer the correct package [GH-135]
+- Change cfn to add -R with no argument lists all the Stacks [GH-138]
+- Add eu-central-1 region (Frankfurt) [GH-139]
+- ConfigurationTemplate is an Object [GH-140]
+- Release: AWS CloudFormation on 2014-11-06 [GH-141]
+- Remove duplicate security_group from port [GH-143]
+- UpdatePolicy and CreationPolicy [GH-144]
+- Fixes duplicate key error reporting [GH-145]
+- Fix warning in CloudFront example description [GH-148]
+- Cfn script create bucket in the specified region [GH-149]
+- Remove Unnecessary EOL whitespace [GH-150]
+  Note: this changes the default JSON separators.
+- More metadata options [GH-153]
+- Metadata auth [GH-155]
+- Fixed CreationPolicy [GH-157] [GH-160]
+- Addded AWS template VPC_Single_Instance_In_Subnet example [GH-162]
+- Add 2014-12-24 CloudFormation release changes [GH-167] [GH-168] [GH-169]
+- Add GSI & LSI Functionality [GH-161] [GH-172]
+- Fixed landscape.io issues [GH-170]
+
+## 0.6.2 (2014-10-09)
+- Update to 2014-09-29 AWS release [GH-132]
+- Add ElastiCache & Port # Constants [GH-132]
+- Add ELB Tag Support [GH-133]
+- Fix DBSecurityGroupIngress required properties [GH-134]
+
+## 0.6.1 (2014-09-28)
+- Update InitConfig per AWS docs [GH-120]
+- S3 improvement + essential constants [GH-125]
+- Allow FindInMap() for ec2.NetworkInterfaceProperty.GroupSet [GH-128]
+
+## 0.6.0 (2014-08-26)
+- Use subnet group for param, not vpc securitygroup [GH-65]
+- Add support for Equals function and Condition [GH-66]
+- Added ELB access logs and CrossZone test [GH-67]
+- Added support for more condition functions [GH-69]
+- Tweaked a few integer validation messages [GH-71]
+- Fix resource.name backward compatibility regression
+- Fix pep8 errors due to new pep8 1.5.x changes [GH-72]
+- Allow Ref() in VPNGatewayRoutePropagation RouteTableIds list [GH-73]
+- Add OpsWorks Support [GH-74]
+- Add AutoScalingGroup TerminationPolicies [GH-77, GH-87]
+- Add new property MetricsCollection [GH-79]
+- Patching Users class to use basestring or Ref type for Groups [GH-80]
+- Added support for Kinesis [GH-81]
+- Allow autoscaling group to support 'min instances in service' and 'max size' values that are Refs [GH-82]
+- Added support for Redshift [GH-84]
+- Add DestinationSecurityGroupId in ec2.SecurityGroupRule [GH-85]
+- Add CloudFront CacheBehavior [GH-86]
+- Tweak UpdatePolicy properties [GH-88]
+- Tweaks to rds.DNInstance [GH-89]
+- Tweaks to EC2 DeviceIndex property values [GH-90]
+- Fix AutoScalingGroup MinSize MaxSize [ GH-92]
+- Add Encrypted option to AWS::EC2::Volume [GH-96]
+- Add missing config to s3.Bucket [GH-97]
+- Add CloudFront DistributionConfig, CacheBehavior and DefaultCacheBehavior [GH-98]
+- Add EC2 Instance InstanceInitiatedShutdownBehavior [GH-99]
+- Updating the block device options for AutoScalingGroups [GH-100]
+- Added support for AWS::CloudFormation::Init in AutoScalingGroup [GH-101]
+- Added VPCPeering class [GH-102]
+- Opworks CustomJson property expects a JSON object not a string [GH-103]
+- Add support for VersioningConfiguration on S3 buckets [GH-104]
+- Added Logs resource type [GH-105]
+- Add PlacementGroup param to AutoScalingGroup [GH-111]
+- Add VpcPeeringConnectionId parameter to EC2 Route [GH-113]
+- Make RDS DBInstance MasterUsername and MasterPassword optional [GH-116]
+- Add CloudTrail, tweaks to CloudWatch Alarm, and support route53 AliasTarger EvaluateTargetHealth [GH-117]
+- Add LogDeliveryWrite canned ACL for S3 bucket [GH-118]
+
+## 0.5.0 (2014-03-21)
+- Add OpenStack native types [GH-61]
+- Make `integer()` validator work with any integer-like object [GH-57]
+- Add support to ELB ConnectionDrainingPolicy [GH-62]
+- Add more OpenStack resource types and validation [GH-63]
+
+## 0.4.0 (2014-02-19)
 - Allow to extend resource classes by adding custom attributes [GH-16]
 - Add AWS::ElastiCache::SubnetGroup [GH-27]
 - Fix examples/VPC\_EC2\_Instance\_With\_Multiple\_Dynamic\_IPAddresses.py [GH-29]
@@ -25,6 +168,8 @@
 - Add SQS dead letter queue from CloudFormation release 2014-01-29
 - Add AutoScaling ScheduledAction from release 2014-01-27
 - Add Tags for SecurityGroups [GH-55]
+- RecordSets in Route53 not formatted correctly [GH-51]
+- Allow Ref() in NetworkInterfaceProperty GroupSet list [GH-56]
 
 ## 0.3.4 (2013-12-05)
 - Adding separators options to print to json function [GH-19]

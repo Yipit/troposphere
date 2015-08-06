@@ -5,6 +5,7 @@ from troposphere import GetAtt, Join, Output
 from troposphere import Parameter, Ref, Template
 from troposphere.cloudfront import Distribution, DistributionConfig
 from troposphere.cloudfront import Origin, DefaultCacheBehavior
+from troposphere.cloudfront import ForwardedValues
 
 
 t = Template()
@@ -13,7 +14,7 @@ t.add_description(
     "AWS CloudFormation Sample Template CloudFront_S3: Sample template "
     "showing how to create an Amazon CloudFront distribution using an "
     "S3 origin. "
-    "**WARNING** This template creates an Amazon EC2 instance. "
+    "**WARNING** This template creates a CloudFront distribution. "
     "You will be billed for the AWS resources used if you create "
     "a stack from this template.")
 
@@ -30,6 +31,9 @@ myDistribution = t.add_resource(Distribution(
         Origins=[Origin(Id="Origin 1", DomainName=Ref(s3dnsname))],
         DefaultCacheBehavior=DefaultCacheBehavior(
             TargetOriginId="Origin 1",
+            ForwardedValues=ForwardedValues(
+                QueryString=False
+            ),
             ViewerProtocolPolicy="allow-all"),
         Enabled=True
     )

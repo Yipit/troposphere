@@ -13,17 +13,18 @@ def boolean(x):
 
 
 def integer(x):
-    if isinstance(x, int):
-        return x
-    if isinstance(x, basestring):
+    try:
         int(x)
+    except (ValueError, TypeError):
+        raise ValueError("%r is not a valid integer" % x)
+    else:
         return x
 
 
 def positive_integer(x):
     p = integer(x)
     if int(p) < 0:
-        raise ValueError
+        raise ValueError("%r is not a positive integer" % x)
     return x
 
 
@@ -45,7 +46,30 @@ def network_port(x):
     if isinstance(x, AWSHelperFn):
         return x
 
-    i = int(x)
-    if i < -1 or i > 65535:
-        raise ValueError
+    i = integer(x)
+    if int(i) < -1 or int(i) > 65535:
+        raise ValueError("network port %r must been between 0 and 65535" % i)
     return x
+
+
+def s3_bucket_name(b):
+    from re import compile
+    s3_bucket_name_re = compile(r'^[a-z\d][a-z\d\.-]{1,61}[a-z\d]$')
+    if s3_bucket_name_re.match(b):
+        return b
+    else:
+        raise ValueError("%s is not a valid s3 bucket name" % b)
+
+
+def encoding(encoding):
+    valid_encodings = ['plain', 'base64']
+    if encoding not in valid_encodings:
+        raise ValueError('Encoding needs to be one of %r' % valid_encodings)
+    return encoding
+
+
+def status(status):
+    valid_statuses = ['Active', 'Inactive']
+    if status not in valid_statuses:
+        raise ValueError('Status needs to be one of %r' % valid_statuses)
+    return status

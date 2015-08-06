@@ -13,7 +13,7 @@ t.add_description("AWS CloudFormation Sample Template: This template "
 
 cfnuser = t.add_resource(User(
     "CFNUser",
-    LoginProfile=LoginProfile("Password"))
+    LoginProfile=LoginProfile(Password="Password"))
 )
 
 cfnusergroup = t.add_resource(Group("CFNUserGroup"))
@@ -21,19 +21,20 @@ cfnadmingroup = t.add_resource(Group("CFNAdminGroup"))
 
 cfnkeys = t.add_resource(AccessKey(
     "CFNKeys",
+    Status="Active",
     UserName=Ref(cfnuser))
 )
 
 users = t.add_resource(UserToGroupAddition(
     "Users",
     GroupName=Ref(cfnusergroup),
-    Users=Ref(cfnuser),
+    Users=[Ref(cfnuser)],
 ))
 
 admins = t.add_resource(UserToGroupAddition(
     "Admins",
     GroupName=Ref(cfnadmingroup),
-    Users=Ref(cfnuser),
+    Users=[Ref(cfnuser)],
 ))
 
 t.add_resource(PolicyType(
