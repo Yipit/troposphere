@@ -6,11 +6,12 @@
 
 import json
 import re
+import sys
 import types
 
 from . import validators
 
-__version__ = "1.1.2"
+__version__ = "1.5.0"
 
 # constants for DeletionPolicy
 Delete = 'Delete'
@@ -38,9 +39,9 @@ class BaseAWSObject(object):
                            'Metadata', 'UpdatePolicy',
                            'Condition', 'CreationPolicy']
 
-        # unset/None is also legal
-        if title and not valid_names.match(title):
-            raise ValueError('Name "%s" not alphanumeric' % title)
+        # try to validate the title if its there
+        if self.title:
+            self.validate_title()
 
         # Create the list of properties set on this object by the user
         self.properties = {}
@@ -59,18 +60,11 @@ class BaseAWSObject(object):
         for k, (_, required) in self.props.items():
             v = getattr(type(self), k, None)
             if v is not None and k not in kwargs:
-                if k in self.attributes:
-                    self.resource[k] = v
-                else:
-                    self.__setattr__(k, v)
+                self.__setattr__(k, v)
 
         # Now that it is initialized, populate it with the kwargs
         for k, v in kwargs.items():
-            # Special case Resource Attributes
-            if k in self.attributes:
-                self.resource[k] = v
-            else:
-                self.__setattr__(k, v)
+            self.__setattr__(k, v)
 
         # Bound it to template if we know it
         if self.template is not None:
@@ -91,6 +85,9 @@ class BaseAWSObject(object):
         if name in self.__dict__.keys() \
                 or '_BaseAWSObject__initialized' not in self.__dict__:
             return dict.__setattr__(self, name, value)
+        elif name in self.attributes:
+            self.resource[name] = value
+            return None
         elif name in self.propnames:
             # Check the type of the object and compare against what we were
             # expecting.
@@ -104,7 +101,16 @@ class BaseAWSObject(object):
 
             # If it's a function, call it...
             elif isinstance(expected_type, types.FunctionType):
-                value = expected_type(value)
+                try:
+                    value = expected_type(value)
+                except:
+                    sys.stderr.write(
+                        "%s: %s.%s function validator '%s' threw "
+                        "exception:\n" % (self.__class__,
+                                          self.title,
+                                          name,
+                                          expected_type.__name__))
+                    raise
                 return self.properties.__setitem__(name, value)
 
             # If it's a list of types, check against those types...
@@ -142,11 +148,24 @@ class BaseAWSObject(object):
                              (type_name, name))
 
     def _raise_type(self, name, value, expected_type):
-        raise TypeError('%s is %s, expected %s' %
-                        (name, type(value), expected_type))
+        raise TypeError('%s: %s.%s is %s, expected %s' % (self.__class__,
+                                                          self.title,
+                                                          name,
+                                                          type(value),
+                                                          expected_type))
+
+    def validate_title(self):
+        if not valid_names.match(self.title):
+            raise ValueError('Name "%s" not alphanumeric' % self.title)
 
     def validate(self):
         pass
+
+    @classmethod
+    def from_dict(cls, title, dict):
+        obj = cls(title)
+        obj.properties.update(dict)
+        return obj
 
     def JSONrepr(self):
         for k, (_, required) in self.props.items():
@@ -155,12 +174,15 @@ class BaseAWSObject(object):
                 raise ValueError(
                     "Resource %s required in type %s" % (k, rtype))
         self.validate()
-        # If no other properties are set, only return the Type.
         # Mainly used to not have an empty "Properties".
         if self.properties:
             return self.resource
         elif hasattr(self, 'resource_type'):
-            return {'Type': self.resource_type}
+            d = {}
+            for k, v in self.resource.items():
+                if k != 'Properties':
+                    d[k] = v
+            return d
         else:
             return {}
 
@@ -355,6 +377,11 @@ class Tags(AWSHelperFn):
                 'Value': v,
             })
 
+    # allow concatenation of the Tags object via '+' operator
+    def __add__(self, newtags):
+        newtags.tags = self.tags + newtags.tags
+        return newtags
+
     def JSONrepr(self):
         return self.tags
 
@@ -454,6 +481,8 @@ class Output(AWSDeclaration):
 
 
 class Parameter(AWSDeclaration):
+    STRING_PROPERTIES = ['AllowedPattern', 'MaxLength', 'MinLength']
+    NUMBER_PROPERTIES = ['MaxValue', 'MinValue']
     props = {
         'Type': (basestring, True),
         'Default': (basestring, False),
@@ -467,3 +496,15 @@ class Parameter(AWSDeclaration):
         'Description': (basestring, False),
         'ConstraintDescription': (basestring, False),
     }
+
+    def validate(self):
+        if self.properties['Type'] != 'String':
+            for p in self.STRING_PROPERTIES:
+                if p in self.properties:
+                    raise ValueError("%s can only be used with parameters of "
+                                     "the String type." % p)
+        if self.properties['Type'] != 'Number':
+            for p in self.NUMBER_PROPERTIES:
+                if p in self.properties:
+                    raise ValueError("%s can only be used with parameters of "
+                                     "the Number type." % p)

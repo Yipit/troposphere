@@ -3,6 +3,7 @@
 #
 
 AP_NORTHEAST_1 = 'ap-northeast-1'
+AP_NORTHEAST_2 = 'ap-northeast-2'
 AP_SOUTHEAST_1 = 'ap-southeast-1'
 AP_SOUTHEAST_2 = 'ap-southeast-2'
 EU_WEST_1 = 'eu-west-1'
@@ -19,6 +20,9 @@ US_WEST_2 = 'us-west-2'
 AP_NORTHEAST_1A = 'ap-northeast-1a'
 AP_NORTHEAST_1B = 'ap-northeast-1b'
 AP_NORTHEAST_1C = 'ap-northeast-1c'
+
+AP_NORTHEAST_2A = 'ap-northeast-2a'
+AP_NORTHEAST_2C = 'ap-northeast-2c'
 
 AP_SOUTHEAST_1A = 'ap-southeast-1a'
 AP_SOUTHEAST_1B = 'ap-southeast-1b'
@@ -71,6 +75,7 @@ POSTGRESQL_PORT = 5432
 # EC2 instance types
 #
 
+T2_NANO = 't2.nano'
 T2_MICRO = 't2.micro'
 T2_SMALL = 't2.small'
 T2_MEDIUM = 't2.medium'
@@ -202,3 +207,37 @@ CACHE_M2_4XLARGE = 'cache.m2.4xlarge'
 CACHE_C1_XLARGE = 'cache.c1.xlarge'
 
 CACHE_T1_MICRO = 'cache.t1.micro'
+
+#
+# Parameter types
+#
+STRING = 'String'
+NUMBER = 'Number'
+LIST_OF_NUMBERS = 'List<Number>'
+COMMA_DELIMITED_LIST = 'CommaDelimitedList'
+
+AVAILABILITY_ZONE_NAME = 'AWS::EC2::AvailabilityZone::Name'
+IMAGE_ID = 'AWS::EC2::Image::Id'
+INSTANCE_ID = 'AWS::EC2::Instance::Id'
+KEY_PAIR_NAME = 'AWS::EC2::KeyPair::KeyName'
+SECURITY_GROUP_NAME = 'AWS::EC2::SecurityGroup::GroupName'
+SECURITY_GROUP_ID = 'AWS::EC2::SecurityGroup::Id'
+SUBNET_ID = 'AWS::EC2::Subnet::Id'
+VOLUME_ID = 'AWS::EC2::Volume::Id'
+VPC_ID = 'AWS::EC2::VPC::Id'
+HOSTED_ZONE_ID = 'AWS::Route53::HostedZone::Id'
+
+LIST_OF_AVAILABILITY_ZONE_NAMES = 'List<AWS::EC2::AvailabilityZone::Name>'
+LIST_OF_IMAGE_ID = 'List<AWS::EC2::Image::Id>'
+LIST_OF_INSTANCE_IDS = 'List<AWS::EC2::Instance::Id>'
+LIST_OF_SECURITY_GROUP_NAMES = 'List<AWS::EC2::SecurityGroup::GroupName>'
+LIST_OF_SECURITY_GROUP_IDS = 'List<AWS::EC2::SecurityGroup::Id>'
+LIST_OF_SUBNET_IDS = 'List<AWS::EC2::Subnet::Id>'
+LIST_OF_VOLUME_IDS = 'List<AWS::EC2::Volume::Id>'
+LIST_OF_VPC_IDS = 'List<AWS::EC2::VPC::Id>'
+LIST_OF_HOSTED_ZONE_IDS = 'List<AWS::Route53::HostedZone::Id>'
+
+#
+# Route53
+#
+CLOUDFRONT_HOSTEDZONEID = 'Z2FDTNDATAQYW2'

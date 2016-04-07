@@ -26,11 +26,14 @@ class CacheBehavior(AWSProperty):
     props = {
         'AllowedMethods': ([basestring], False),
         'CachedMethods': ([basestring], False),
+        'Compress': (boolean, False),
         'TargetOriginId': (basestring, True),
         'ForwardedValues': (ForwardedValues, True),
         'TrustedSigners': ([basestring], False),
         'ViewerProtocolPolicy': (basestring, True),
         'MinTTL': (integer, False),
+        'DefaultTTL': (integer, False),
+        'MaxTTL': (integer, False),
         'PathPattern': (basestring, True),
         'SmoothStreaming': (boolean, False),
     }
@@ -40,11 +43,14 @@ class DefaultCacheBehavior(AWSProperty):
     props = {
         'AllowedMethods': ([basestring], False),
         'CachedMethods': ([basestring], False),
+        'Compress': (boolean, False),
         'TargetOriginId': (basestring, True),
         'ForwardedValues': (ForwardedValues, True),
         'TrustedSigners': (list, False),
         'ViewerProtocolPolicy': (basestring, True),
         'MinTTL': (integer, False),
+        'DefaultTTL': (integer, False),
+        'MaxTTL': (integer, False),
         'SmoothStreaming': (boolean, False),
     }
 
@@ -126,6 +132,7 @@ class DistributionConfig(AWSProperty):
         'PriceClass': (basestring, False),
         'Restrictions': (Restrictions, False),
         'ViewerCertificate': (ViewerCertificate, False),
+        'WebACLId': (basestring, False)
     }
 
 

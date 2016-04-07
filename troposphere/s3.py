@@ -125,16 +125,70 @@ class LoggingConfiguration(AWSProperty):
     }
 
 
-class TopicConfiguration(AWSProperty):
+class Rules(AWSProperty):
+    props = {
+        'Name': (basestring, True),
+        'Value': (basestring, True)
+    }
+
+
+class S3Key(AWSProperty):
+    props = {
+        'Rules': ([Rules], True)
+    }
+
+
+class Filter(AWSProperty):
+    props = {
+        'S3Key': (S3Key, True)
+    }
+
+
+class LambdaConfigurations(AWSProperty):
     props = {
         'Event': (basestring, True),
+        'Filter': (Filter, False),
+        'Function': (basestring, True),
+    }
+
+
+class QueueConfigurations(AWSProperty):
+    props = {
+        'Event': (basestring, True),
+        'Filter': (Filter, False),
+        'Queue': (basestring, True),
+    }
+
+
+class TopicConfigurations(AWSProperty):
+    props = {
+        'Event': (basestring, True),
+        'Filter': (Filter, False),
         'Topic': (basestring, True),
     }
 
 
 class NotificationConfiguration(AWSProperty):
     props = {
-        'TopicConfigurations': ([TopicConfiguration], True),
+        'LambdaConfigurations': ([LambdaConfigurations], False),
+        'QueueConfigurations': ([QueueConfigurations], False),
+        'TopicConfigurations': ([TopicConfigurations], False),
+    }
+
+
+class ReplicationConfigurationRules(AWSProperty):
+    props = {
+        'Destination': (basestring, True),
+        'Id': (basestring, False),
+        'Prefix': (basestring, True),
+        'Status': (basestring, True)
+    }
+
+
+class ReplicationConfiguration(AWSProperty):
+    props = {
+        'Role': (basestring, True),
+        'Rules': ([ReplicationConfigurationRules], True)
     }
 
 
@@ -148,6 +202,7 @@ class Bucket(AWSObject):
         'LifecycleConfiguration': (LifecycleConfiguration, False),
         'LoggingConfiguration': (LoggingConfiguration, False),
         'NotificationConfiguration': (NotificationConfiguration, False),
+        'ReplicationConfiguration': (ReplicationConfiguration, False),
         'Tags': (Tags, False),
         'WebsiteConfiguration': (WebsiteConfiguration, False),
         'VersioningConfiguration': (VersioningConfiguration, False)

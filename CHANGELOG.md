@@ -1,3 +1,83 @@
+## 1.5.0 (2016-03-01)
+- Add MariaDB to list of RDS engines [GH-368]
+- Add ap-northeast [GH-373]
+- Add T2 Nano [GH-374]
+- capability support for cfn [GH-375]
+- Update to resource list in documentation [GH-383]
+- More info from validator function errors [GH-385]
+- Add testing for python 3.5 [GH-388]
+- Extended title validation [GH-389]
+- EC2 NAT Gateway [GH-394]
+- Add AWS::ECR::Repository [GH-395]
+- Add KmsKeyId and StorageEncrypted to DBCluster [GH-396]
+- Add awacs soft dependency [GH-397]
+- New dynamodb2 module to replace dynamodb for consistent interface [GH-398]
+- Add IsMultiRegionTrail support [GH-399]
+- Add IncludeGlobalResourceTypes to RecordingGroup [GH-400]
+- Capitalize examples [GH-404]
+- use location constants for bucket creation in cfn [GH-409]
+
+## 1.4.0 (2016-01-01)
+- Add RDS Aurora support [GH-335]
+- Change DeploymentGroup Ec2TagFilters to list [GH-337]
+- Correct EC2 SpotFleet LaunchSpecifications [GH-338]
+- RDS::DBCluster change AvailabilityZone to AvailabilityZones [GH-341]
+- ECS LoadBalancerName property is a string [GH-342]
+- CodeDeploy S3Location Version property is not a default requirement [GH-345]
+- Add AutoEnableIO to AWS::EC2::Volume
+- Only discard Properties in JSONrepr [GH-354]
+- CodeDeploy added ApplicationName [GH-357]
+- CodeDeploy DeploymentGroupName property missing [GH-358]
+- Add in cloudfront properties for max, default [GH-360]
+- Allow RDS iops to be 0 [GH-361]
+- Add CodePipline support [GH-362]
+- Implemented CloudFormation changes from Dec 3 and Dec 28 [GH-366]
+- Add AWS::Config, AWS::KMS, AWS::SSM
+
+## 1.3.0 (2015-10-21)
+- Add new resources from 2015-10-01 CloudFormation release:
+  - AWS::CodeDeploy
+  - AWS::DirectoryService::SimpleAD
+  - AWS::EC2::PlacementGroup and AWS::EC2::SpotFleet
+  - AWS::Lambda::EventSourceMapping and AWS::Lambda::Permission
+  - AWS::Logs::SubscriptionFilter
+  - AWS::RDS::DBCluster and AWS::RDS::DBClusterParameter
+  - AWS::WorkSpaces::Workspace
+- Add updates to these resources from 2015-10-01 CloudFormation release:
+  - AWS::ElastiCache::ReplicationGroup
+  - AWS::OpsWorks::Stack
+  - AWS::OpsWorks::App
+  - AWS::S3::Bucket
+- Add ElastiCache (Redis) Example [ GH-329]
+- RDS: Added postgresql-license [GH-324]
+- tail: only add unseen events [GH-327]
+- Make Ref() work with datapipeline.ObjectField.RefValue [GH-328]
+- Fix DeploymentGroup resource_type (AWS::CodeDeploy::DeploymentGroup) [GH-333]
+- Add concatenation operator function __add__ for Tags [GH-334]
+
+## 1.2.2 (2015-09-15)
+- Give more info about type errors [GH-312]
+- Move `tail` within the troposphere library. This lets external libraries
+  leverage this function [GH-315]
+- Improve opsworks validation [GH-319]
+- Fix RDS validation with conditional parameters [GH-320]
+
+## 1.2.1 (2015-09-07)
+- Bugfix for RDS Ref/GetAtt issue [GH-310]
+
+## 1.2.0 (2015-09-04)
+- Add support for EFS
+- Elasticache: only validate az choices if azs is a list [GH-292]
+- Add from_dict function to BaseAWSObject [GH-294]
+- IAM: Path is optional for Role and InstanceProfile [GH-295]
+- Validate parameter options based on Type [GH-296]
+- RDS: Add more specific validators to DBInstance [GH-297]
+- Add constants for the parameter types [GH-300]
+- Add lambda ZipFile property [GH-301]
+- Adds VPCEndpoint resource type [GH-304]
+- Supports tags in ElasticBeanstalk environments [GH-308]
+- Move cloudformation attribute setting to __setattr__ [GH-309]
+
 ## 1.1.2 (2015-07-23)
 - Clarify the license is a [BSD 2-Clause license](http://opensource.org/licenses/BSD-2-Clause)
 - Add FindInMap type check for AutoScalingGroup validation of group sizes [GH-285]

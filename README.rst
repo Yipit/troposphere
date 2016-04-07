@@ -29,6 +29,11 @@ issuing::
 
     $ pip install troposphere
 
+To install troposphere with `awacs <https://github.com/cloudtools/awacs>`_
+(recommended soft dependency)::
+
+    $ pip install troposphere[policy]
+
 Alternatively, you can run use setup.py to install by cloning this repository
 and issuing::
 
@@ -112,13 +117,22 @@ Currently supported AWS resource types
 - AWS::CloudFront
 - AWS::CloudTrail
 - AWS::CloudWatch
+- AWS::CodeDeploy
+- AWS::CodePipeline
+- AWS::Config
+- AWS::DirectoryService
 - AWS::DynamoDB
 - AWS::EC2
+- AWS::ECR
+- AWS::ECS
 - AWS::ElastiCache
 - AWS::ElasticBeanstalk
 - AWS::ElasticLoadBalancing
+- AWS::Elasticsearch
 - AWS::IAM
 - AWS::KINESIS
+- AWS::KMS
+- AWS::Lambda
 - AWS::Logs
 - AWS::OPSWORKS
 - AWS::RDS
@@ -128,6 +142,8 @@ Currently supported AWS resource types
 - AWS::SDB
 - AWS::SNS
 - AWS::SQS
+- AWS::SSM
+- AWS::WorkSpaces
 
 Currently supported OpenStack resource types
 ============================================
@@ -228,6 +244,47 @@ Duplicating a single instance sample would look like this
     ])
 
     print(template.to_json())
+
+New DynamoDB module
+===================
+
+The original dynamodb module did not use a consistent interface with the rest
+of troposphere, and so is being phased out. In order to prepare for this,
+you'll need to make a few changes to dynamodb resources. The biggest change
+is that many of the dynamodb properties are now treated like regular properties
+in troposphere rather than as helper functions.  For a full example of the
+changes, you can check out this diff between the DynamoDB_Table example using
+the old and the new modules::
+
+  # diff examples/DynamoDB_Table.py examples/DynamoDB2_Table.py
+  5,7c5,7
+  < from troposphere.dynamodb import (Key, AttributeDefinition,
+  <                                   ProvisionedThroughput)
+  < from troposphere.dynamodb import Table
+  ---
+  > from troposphere.dynamodb2 import (KeySchema, AttributeDefinition,
+  >                                    ProvisionedThroughput)
+  > from troposphere.dynamodb2 import Table
+  58c58,61
+  <         AttributeDefinition(Ref(hashkeyname), Ref(hashkeytype)),
+  ---
+  >         AttributeDefinition(
+  >             AttributeName=Ref(hashkeyname),
+  >             AttributeType=Ref(hashkeytype)
+  >         ),
+  61c64,67
+  <         Key(Ref(hashkeyname), "HASH")
+  ---
+  >         KeySchema(
+  >             AttributeName=Ref(hashkeyname),
+  >             KeyType="HASH"
+  >         )
+  64,65c70,71
+  <         Ref(readunits),
+  <         Ref(writeunits)
+  ---
+  >         ReadCapacityUnits=Ref(readunits),
+  >         WriteCapacityUnits=Ref(writeunits)
 
 Community
 =========

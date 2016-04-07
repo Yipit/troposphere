@@ -3,7 +3,7 @@
 #
 # See LICENSE file for full license.
 
-from . import AWSObject, Ref, GetAtt
+from . import AWSObject, Ref, GetAtt, Tags
 from .validators import boolean, integer, network_port
 
 
@@ -30,6 +30,7 @@ class CacheCluster(AWSObject):
         'SnapshotName': (basestring, False),
         'SnapshotRetentionLimit': (integer, False),
         'SnapshotWindow': (basestring, False),
+        'Tags': (Tags, False),
         'VpcSecurityGroupIds': ([basestring, Ref, GetAtt], False),
     }
 
@@ -37,7 +38,9 @@ class CacheCluster(AWSObject):
         # Check that AZMode is "cross-az" if more than one Availability zone
         # is specified in PreferredAvailabilityZones
         preferred_azs = self.properties.get('PreferredAvailabilityZones')
-        if preferred_azs is not None and len(preferred_azs) > 1:
+        if preferred_azs is not None and \
+                isinstance(preferred_azs, list) and \
+                len(preferred_azs) > 1:
             if self.properties.get('AZMode') != 'cross-az':
                 raise ValueError('AZMode must be "cross-az" if more than one a'
                                  'vailability zone is specified in PreferredAv'
@@ -98,7 +101,7 @@ class ReplicationGroup(AWSObject):
         'CacheSubnetGroupName': (basestring, False),
         'Engine': (basestring, True),
         'EngineVersion': (basestring, False),
-        'NotificationTopicArn': ([basestring, Ref], False),
+        'NotificationTopicArn': (basestring, False),
         'NumCacheClusters': (integer, True),
         'Port': (network_port, False),
         'PreferredCacheClusterAZs': ([basestring], False),
